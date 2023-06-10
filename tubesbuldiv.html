@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CRUD Web Service</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.1/css/jquery.dataTables.min.css">
+    <script src="https://cdn.datatables.net/1.11.1/js/jquery.dataTables.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Fetch data from the REST API
+            $.ajax({
+                url: "http://localhost/TUBES/tubesbuldiv.php",
+                method: "GET",
+                dataType: "json",
+                success: function(data) {
+                    // Initialize Datatable on the table element
+                    $("#itemsTable").DataTable({
+                        data: data,
+                        columns: [
+                            { data: "id" },
+                            { data: "nama_barang" },
+                            { data: "deskripsi" }
+                        ]
+                    });
+                },
+                error: function(xhr, status, error) {
+                    console.log("Error: " + error);
+                }
+            });
+        });
+    </script>
+</head>
+<body>
+    <h1>Data Barang</h1>
+    <table id="itemsTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nama Barang</th>
+                <th>Deskripsi</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+</body>
+</html>

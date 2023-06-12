@@ -2,46 +2,192 @@
 <html>
 <head>
     <title>CRUD Web Service</title>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.1/css/jquery.dataTables.min.css">
-    <script src="https://cdn.datatables.net/1.11.1/js/jquery.dataTables.min.js"></script>
-    <script>
-        $(document).ready(function() {
-            // Fetch data from the REST API
-            $.ajax({
-                url: "http://localhost/TUBES/tubesbuldiv.php",
-                method: "GET",
-                dataType: "json",
-                success: function(data) {
-                    // Initialize Datatable on the table element
-                    $("#itemsTable").DataTable({
-                        data: data,
-                        columns: [
-                            { data: "id" },
-                            { data: "nama_barang" },
-                            { data: "deskripsi" }
-                        ]
-                    });
-                },
-                error: function(xhr, status, error) {
-                    console.log("Error: " + error);
-                }
-            });
-        });
-    </script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/dt-1.11.2/datatables.min.css"/>
+    <link rel="stylesheet" type="text/css" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css"/>
+    <style>
+        #updateDialog {
+            display: none;
+        }
+    </style>
 </head>
 <body>
-    <h1>Data Barang</h1>
-    <table id="itemsTable">
+    <h1>CRUD Web Service</h1>
+
+    <h2>Management Barang</h2>
+    <table id="itemsTable" class="display" style="width:100%">
         <thead>
             <tr>
                 <th>ID</th>
                 <th>Nama Barang</th>
                 <th>Deskripsi</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody>
         </tbody>
     </table>
+
+    <h2>Add Villa</h2>
+    <form id="addForm">
+        <div>
+            <label for="id">ID:</label>
+            <input type="text" id="id" name="id">
+        </div>
+        <div>
+            <label for="nama_barang">Nama Barang:</label>
+            <input type="text" id="nama_barang" name="nama_barang">
+        </div>
+        <div>
+            <label for="deskripsi">Deskripsi:</label>
+            <input type="text" id="deskripsi" name="deskripsi">
+        </div>
+        <div>
+            <button type="submit">Add</button>
+        </div>
+    </form>
+    
+    <div id="updateDialog" title="Update Item" style="display: none;">
+        <form id="updateForm">
+            <div>
+                <label for="id_update">ID:</label>
+                <input type="text" id="id_update" name="id_update" readonly>
+            </div>
+            <div>
+                <label for="new_id">NEW ID (OPTIONAL) :</label>
+                <input type="text" id="new_id" name="new_id">
+            </div>
+            <div>
+                <label for="nama_barang_update">Nama Barang:</label>
+                <input type="text" id="nama_barang_update" name="nama_barang_update">
+            </div>
+            <div>
+                <label for="deskripsi_update">Deskripsi:</label>
+                <input type="text" id="deskripsi_update" name="deskripsi_update">
+            </div>
+            <div>
+                <button type="submit">Update</button>
+            </div>
+        </form>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <script src="https://cdn.datatables.net/v/dt/dt-1.11.2/datatables.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/jquery.validation/1.16.0/jquery.validate.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Fetch data from the REST API
+            var itemsTable = $('#itemsTable').DataTable({
+                ajax: {
+                    url: "http://localhost/TUBES/tubesbuldiv.php",
+                    dataSrc: ''
+                },
+                columns: [
+                    { data: "id" },
+                    { data: "nama_barang" },
+                    { data: "deskripsi" },
+                    {
+                        data: null,
+                        render: function (data, type, row) {
+                            return '<button class="deleteButton" data-id="' + row.id + '">Delete</button>' +
+                                   '<button class="updateButton" data-id="' + row.id + '">Update</button>'; 
+                        }
+                    }
+                ]
+            });
+
+            // Add/POST Form
+            $('#addForm').validate({
+                rules: {
+                    id: 'required',
+                    nama_barang: 'required',
+                    deskripsi: 'required'
+                },
+                submitHandler: function(form) {
+                    var formData = $(form).serialize();
+                    $.ajax({
+                        url: 'http://localhost/TUBES/tubesbuldiv.php',
+                        type: 'POST',
+                        data: formData,
+                        success: function(response) {
+                            itemsTable.ajax.reload();
+                            form.reset();
+                        },
+                        error: function(xhr, status, error) {
+                            console.error(xhr.responseText);
+                        }
+                    });
+                }
+            });
+
+            // Intialize update form
+            $('#updateForm').validate({
+                rules: {
+                    nama_barang_update: 'required',
+                    deskripsi_update: 'required'
+                },
+                submitHandler: function(form) {
+                    var formData = $(form).serialize();
+                    $.ajax({
+                        url: 'http://localhost/TUBES/tubesbuldiv.php',
+                        type: 'PUT',
+                        data: formData,
+                        success: function(response) {
+                            itemsTable.ajax.reload();
+                            $('#updateDialog').dialog('close');
+                        },
+                        error: function(xhr, status, error) {
+                            console.error(xhr.responseText);
+                        }
+                    });
+                }
+            });
+
+            // Update/PUT Form
+            $('#itemsTable').on('click', '.updateButton', function() {
+                var itemId = $(this).data('id');
+                var row = $(this).closest('tr');
+                var rowData = itemsTable.row(row).data();
+                // Populate the update form fields with the selected item's data
+                $('#id_update').val(rowData.id);
+                $('#new_id').val('');
+                $('#nama_barang_update').val(rowData.nama_barang);
+                $('#deskripsi_update').val(rowData.deskripsi);
+                $('#updateDialog').dialog('open');
+            });
+
+            // Submit or Cancel
+            $('#updateDialog').dialog({
+                autoOpen: false,
+                width: 400,
+                buttons: {
+                    "Update": function() {
+                        $('#updateForm').submit();
+                    },
+                    "Cancel": function() {
+                        $(this).dialog('close');
+                    }
+                }
+            });
+
+            // DELETE + Confirmation
+            $('#itemsTable').on('click', '.deleteButton', function() {
+                var itemId = $(this).data('id');
+                var row = $(this).closest('tr');
+                if (confirm('Are you sure you want to delete this item?')) {
+                    $.ajax({
+                        url: 'http://localhost/TUBES/tubesbuldiv.php?id=' + itemId,
+                        type: 'DELETE',
+                        success: function(response) {
+                            itemsTable.row(row).remove().draw(false);
+                        },
+                        error: function(xhr, status, error) {
+                            console.error(xhr.responseText);
+                        }
+                    });
+                }
+            });
+        });
+    </script>
 </body>
 </html>

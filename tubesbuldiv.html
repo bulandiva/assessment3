@@ -1,38 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>CRUD Web Service</title>
+    <title>Data Produk</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.1/css/jquery.dataTables.min.css">
-    <script src="https://cdn.datatables.net/1.11.1/js/jquery.dataTables.min.js"></script>
-    <script>
-        $(document).ready(function() {
-            // Fetch data from the REST API
-            $.ajax({
-                url: "http://localhost/TUBES/tubesbuldiv.php",
-                method: "GET",
-                dataType: "json",
-                success: function(data) {
-                    // Initialize Datatable on the table element
-                    $("#itemsTable").DataTable({
-                        data: data,
-                        columns: [
-                            { data: "id" },
-                            { data: "nama_barang" },
-                            { data: "deskripsi" }
-                        ]
-                    });
-                },
-                error: function(xhr, status, error) {
-                    console.log("Error: " + error);
-                }
-            });
-        });
-    </script>
-</head>
-<body>
-    <h1>Data Barang</h1>
-    <table id="itemsTable">
+ <body>
+    <h1>Pencarian Barang</h1>
+    <table id="Pencarian Barang">
         <thead>
             <tr>
                 <th>ID</th>
@@ -40,8 +13,146 @@
                 <th>Deskripsi</th>
             </tr>
         </thead>
-        <tbody>
-        </tbody>
+        <tbody></tbody>
     </table>
+
+    <div class="form-container">
+        <h2>Tambah Data</h2>
+        <div>
+            <div>
+                <label for="idInput">ID:</label>
+                <input type="text" id="idInput">
+            </div>
+            <label for="nama_barangInput">Nama Barang</label>
+            <input type="text" id="namabarangInput">
+        </div>
+        <div>
+            <label for="deskripsiInput">Deskripsi:</label>
+            <input type="text" id="deskripsiInput">
+        </div>
+        
+        <button id="tambahDataProduk">Tambah Data</button>
+    </div>
+    
+    <script>
+        $(document).ready(function() {
+            // Mengambil data dari REST API
+            function getData() {
+                $.ajax({
+                    url: 'http://localhost/tubes_pabw/API-tubes.php',
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function(data) {
+                        var tableBody = $('#itemsTable');
+                        tableBody.empty();
+                        for (var i = 0; i < data.length; i++) {
+                            var cariproduk = data[i];
+                            var row = "<tr>";
+                            row += "<td>" + cariproduk.id + "</td>";
+                            row += "<td>" + cariproduk.nama_barang + "</td>";
+                            row += "<td>" + cariproduk.deskripsi + "</td>";
+                            row += "<td><button class='updateProduk' data-id='" + cariproduk.id + "'>Update</button> <button class='deleteBtn' data-id='" + cari.id+ "'>Delete</button></td>";
+                            row += "</tr>";
+                            tableBody.append(row);
+                        }
+                        setButtonHandlers();
+                    },
+                    error: function(xhr, status, error) {
+                        console.error(xhr.responseText);
+                    }
+                });
+            }
+
+            getData();
+
+            function addData() {
+                var id = $('#idInput').val();
+                var nama_barang = $('#namabarangInput').val();
+                var deskripsi = $('#deskripsiInput').val();
+
+                // Membuat objek data yang akan dikirim
+                var newData = {
+                    id:id,
+                    nama_barang: nama_barang,
+                    deskripsi: deskripsi
+                };
+
+                $.ajax({
+                    url: 'http://localhost/TUBES/tubesbuldiv.php',
+                    type: 'POST',
+                    data: newData,
+                    dataType: 'json',
+                    success: function(response) {
+                        getData();
+                        $('#idInput').val('');
+                        $('#namabarangInput').val('');
+                        $('#deskripsiInput').val('');
+                    },
+                    error: function(xhr, status, error) {
+                        console.error(xhr.responseText);
+                    }
+                });
+            }
+
+            $('#menambahDataProduk').click(addData);
+
+            function setButtonHandlers() {
+                $('.updateProduk').click(function() {
+                    var id = $(this).data('id');
+                    var row = $(this).closest('tr');
+                    var nama_barang = row.find('td:nth-child(2)').text();
+                    var deskripsi = row.find('td:nth-child(3)').text();
+
+                    var updateForm = "<td><input type='text' class='updateId' name='id' value='" + id+ "'></td>";
+                    updateForm += "<td><input type='text' class='updateNama' name='nama_barang' value='" + nama_barang + "'></td>";
+                    updateForm += "<td><input type='text' class='updateDeskripsi' name='deskripsi' value='" + deskripsi + "'></td>";
+                    updateForm += "<td><button class='saveProduk' data-id='" + id + "'>Save</button></td>";
+
+                    row.html(updateForm);
+                    $('.saveProduk').click(function() {
+                        var id= $(this).data('id');
+                        var row = $(this).closest('tr');
+                        var nama_barang = row.find('.updateNama').val();
+                        var deskripsi = row.find('.updateDeskripsi').val();
+
+                        var updatedData = {
+                            id: id,
+                            nama_barang: nama_barang,
+                            deskripsi: deskripsi
+                        };
+
+                        $.ajax({
+                            url: 'http://localhost/TUBES/tubesbuldiv.php',
+                            type: 'PUT',
+                            data: updatedData,
+                            dataType: 'json',
+                            success: function(response) {
+                                getData();
+                            },
+                            error: function(xhr, status, error) {
+                                console.error(xhr.responseText);
+                            }
+                        });
+                    });
+                });
+
+                $('.deleteBtn').click(function() {
+                    var id_produk = $(this).data('id');
+
+                    $.ajax({
+                        url: 'http://localhost/TUBES/tubesbuldiv.php'+ id,
+                        type: 'DELETE',
+                        dataType: 'json',
+                        success: function(response) {
+                            getData();
+                        },
+                        error: function(xhr, status, error) {
+                            console.error(xhr.responseText);
+                        }
+                    });
+                });
+            }
+        });
+    </script>
 </body>
 </html>
